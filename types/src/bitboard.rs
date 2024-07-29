@@ -3,7 +3,7 @@ use super::*;
 use std::ops::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
-pub struct BitBoard(pub u64);
+pub struct BitBoard(pub u128);
 
 macro_rules! impl_math_ops {
     ($($trait:ident,$fn:ident;)*) => {$(

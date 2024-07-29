@@ -14,4 +14,9 @@ impl Rng {
         let xsl = (self.0 >> 64) as u64 ^ self.0 as u64;
         xsl.rotate_right(rot)
     }
+    pub fn next_u128(&mut self) -> u128 {
+        let x = self.next_u64() as u128;
+        let y = self.next_u64() as u128;
+        (x << 64) | y
+    }
 }

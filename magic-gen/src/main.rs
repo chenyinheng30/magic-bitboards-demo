@@ -49,13 +49,13 @@ const ROOK: Slider = Slider {
 
 struct MagicEntry {
     mask: BitBoard,
-    magic: u64,
+    magic: u128,
     shift: u8,
 }
 
 fn magic_index(entry: &MagicEntry, blockers: BitBoard) -> usize {
     let blockers = blockers & entry.mask;
-    let hash = blockers.0.wrapping_mul(entry.magic);
+    let hash = blockers.0.wrapping_mul(entry.magic as u128);
     let index = (hash >> entry.shift) as usize;
     index
 }
@@ -69,11 +69,11 @@ fn find_magic(
     rng: &mut Rng,
 ) -> (MagicEntry, Vec<BitBoard>) {
     let mask = slider.relevant_blockers(square);
-    let shift = 64 - index_bits;
+    let shift = 128 - index_bits;
     loop {
         // Magics require a low number of active bits, so we AND
         // by two more random values to cut down on the bits set.
-        let magic = rng.next_u64() & rng.next_u64() & rng.next_u64();
+        let magic = rng.next_u128() & rng.next_u128() & rng.next_u128();
         let magic_entry = MagicEntry { mask, magic, shift };
         if let Ok(table) = try_make_table(slider, square, &magic_entry) {
             return (magic_entry, table);
@@ -90,13 +90,14 @@ fn try_make_table(
     square: Square,
     magic_entry: &MagicEntry,
 ) -> Result<Vec<BitBoard>, TableFillError> {
-    let index_bits = 64 - magic_entry.shift;
+    let index_bits = 128 - magic_entry.shift;
     let mut table = vec![BitBoard::EMPTY; 1 << index_bits];
     // Iterate all configurations of blockers
     let mut blockers = BitBoard::EMPTY;
     loop {
         let moves = slider.moves(square, blockers);
-        let table_entry = &mut table[magic_index(magic_entry, blockers)];
+        let index = magic_index(magic_entry, blockers);
+        let table_entry = &mut table[index];
         if table_entry.is_empty() {
             // Write to empty slot
             *table_entry = moves;
@@ -128,7 +129,7 @@ fn find_and_print_all_magics(slider: &dyn Move, slider_name: &str, rng: &mut Rng
         // In the final move generator, each table is concatenated into one contiguous table
         // for convenience, so an offset is added to denote the start of each segment.
         println!(
-            "    MagicEntry {{ mask: 0x{:016X}, magic: 0x{:016X}, shift: {}, offset: {} }},",
+            "    MagicEntry {{ mask: 0x{:016X}, magic: 0x{:032X}, shift: {}, offset: {} }},",
             entry.mask.0, entry.magic, entry.shift, total_table_size
         );
         total_table_size += table.len();
