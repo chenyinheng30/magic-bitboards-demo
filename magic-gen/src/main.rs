@@ -136,8 +136,8 @@ fn find_and_print_all_magics(slider: &dyn Move, slider_name: &str, rng: &mut Rng
     }
     println!("];");
     println!(
-        "pub const {}_TABLE_SIZE: usize = {};",
-        slider_name, total_table_size
+        "pub const {}_TABLE_SIZE: usage = {} KiB;",
+        slider_name, total_table_size / 1024 * 16
     );
 }
 
