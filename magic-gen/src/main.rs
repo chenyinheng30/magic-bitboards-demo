@@ -124,21 +124,25 @@ fn find_and_print_all_magics(slider: &dyn Move, slider_name: &str, rng: &mut Rng
     );
     let mut total_table_size = 0;
     for &square in &Square::ALL {
-        let index_bits = slider.relevant_blockers(square).popcnt() as u8;
-        let (entry, table) = find_magic(slider, square, index_bits, rng);
-        // In the final move generator, each table is concatenated into one contiguous table
-        // for convenience, so an offset is added to denote the start of each segment.
-        println!(
-            "    MagicEntry {{ mask: 0x{:016X}, magic: 0x{:032X}, shift: {}, offset: {} }},",
-            entry.mask.0, entry.magic, entry.shift, total_table_size
-        );
-        total_table_size += table.len();
+        find_and_print_step(slider, square, rng, &mut total_table_size);
     }
     println!("];");
     println!(
         "pub const {}_TABLE_SIZE: usage = {} KiB;",
         slider_name, total_table_size / 1024 * 16
     );
+}
+
+fn find_and_print_step(slider: &dyn Move, square: Square, rng: &mut Rng, total_table_size: &mut usize) {
+    let index_bits = slider.relevant_blockers(square).popcnt() as u8;
+    let (entry, table) = find_magic(slider, square, index_bits, rng);
+    // In the final move generator, each table is concatenated into one contiguous table
+    // for convenience, so an offset is added to denote the start of each segment.
+    println!(
+        "    MagicEntry {{ mask: 0x{:016X}, magic: 0x{:032X}, shift: {}, offset: {} }},",
+        entry.mask.0, entry.magic, entry.shift, total_table_size
+    );
+    *total_table_size += table.len();
 }
 
 fn main() {
