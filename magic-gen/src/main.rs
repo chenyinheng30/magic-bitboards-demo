@@ -3,11 +3,16 @@ mod rng;
 use rng::*;
 use types::*;
 
+trait Move {
+    fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard;
+    fn relevant_blockers(&self, square: Square) -> BitBoard;
+}
+
 struct Slider {
     deltas: [(i8, i8); 4],
 }
 
-impl Slider {
+impl Move for Slider {
     fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard {
         let mut moves = BitBoard::EMPTY;
         for &(df, dr) in &self.deltas {
@@ -58,10 +63,10 @@ fn magic_index(entry: &MagicEntry, blockers: BitBoard) -> usize {
 // Given a sliding piece and a square, finds a magic number that
 // perfectly maps input blockers into its solution in a hash table
 fn find_magic(
-    slider: &Slider,
+    slider: &dyn Move,
     square: Square,
     index_bits: u8,
-    rng: &mut Rng
+    rng: &mut Rng,
 ) -> (MagicEntry, Vec<BitBoard>) {
     let mask = slider.relevant_blockers(square);
     let shift = 64 - index_bits;
@@ -81,7 +86,7 @@ struct TableFillError;
 // Attempt to fill in a hash table using a magic number.
 // Fails if there are any non-constructive collisions.
 fn try_make_table(
-    slider: &Slider,
+    slider: &dyn Move,
     square: Square,
     magic_entry: &MagicEntry,
 ) -> Result<Vec<BitBoard>, TableFillError> {
@@ -99,7 +104,7 @@ fn try_make_table(
             // Having two different move sets in the same slot is a hash collision
             return Err(TableFillError);
         }
-        
+
         // Carry-Rippler trick that enumerates all subsets of the mask, getting us all blockers.
         // https://www.chessprogramming.org/Traversing_Subsets_of_a_Set#All_Subsets_of_any_Set
         blockers.0 = blockers.0.wrapping_sub(magic_entry.mask.0) & magic_entry.mask.0;
@@ -111,7 +116,7 @@ fn try_make_table(
     Ok(table)
 }
 
-fn find_and_print_all_magics(slider: &Slider, slider_name: &str, rng: &mut Rng) {
+fn find_and_print_all_magics(slider: &dyn Move, slider_name: &str, rng: &mut Rng) {
     println!(
         "pub const {}_MAGICS: &[MagicEntry; Square::NUM] = &[",
         slider_name
