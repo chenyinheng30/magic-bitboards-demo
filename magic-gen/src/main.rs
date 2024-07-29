@@ -42,10 +42,6 @@ const ROOK: Slider = Slider {
     deltas: [(1, 0), (0, -1), (-1, 0), (0, 1)],
 };
 
-const BISHOP: Slider = Slider {
-    deltas: [(1, 1), (1, -1), (-1, -1), (-1, 1)],
-};
-
 struct MagicEntry {
     mask: BitBoard,
     magic: u64,
@@ -142,5 +138,4 @@ fn find_and_print_all_magics(slider: &Slider, slider_name: &str, rng: &mut Rng) 
 fn main() {
     let mut rng = Rng::default();
     find_and_print_all_magics(&ROOK, "ROOK", &mut rng);
-    find_and_print_all_magics(&BISHOP, "BISHOP", &mut rng);
 }
