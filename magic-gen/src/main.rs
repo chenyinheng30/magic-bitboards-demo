@@ -1,7 +1,7 @@
 mod rng;
 mod threadpool;
 
-use std::{borrow::Borrow, sync::{Arc, Mutex}};
+use std::sync::{Arc, Mutex};
 
 use rng::*;
 use types::*;

@@ -1,7 +1,7 @@
 use std::{sync::{mpsc, Arc, Mutex}, thread};
 
 pub struct ThreadPool {
-    workers: Vec<Worker>,
+    _workers: Vec<Worker>,
     sender: mpsc::Sender<Job>,
     receiver: mpsc::Receiver<()>,
     count: usize
@@ -25,7 +25,7 @@ impl ThreadPool {
             workers.push(Worker::new(id, Arc::clone(&receiver), worker_sender.clone()));
         }
 
-        ThreadPool { workers, sender, receiver: pool_receiver, count: 0 }
+        ThreadPool { _workers: workers, sender, receiver: pool_receiver, count: 0 }
     }
 
     pub fn execute<F>(&mut self, f: F)
@@ -46,8 +46,8 @@ impl ThreadPool {
 }
 
 struct Worker {
-    id: usize,
-    thread: thread::JoinHandle<()>
+    _id: usize,
+    _thread: thread::JoinHandle<()>
 }
 
 impl Worker {
@@ -58,6 +58,6 @@ impl Worker {
             sender.send(()).unwrap()
         });
 
-        Worker { id, thread }
+        Worker { _id: id, _thread: thread }
     }
 }
