@@ -4,8 +4,8 @@ mod threadpool;
 use std::sync::{Arc, Mutex};
 
 use rng::*;
-use types::*;
 use threadpool::*;
+use types::*;
 
 trait Move {
     fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard;
@@ -124,18 +124,22 @@ fn try_make_table(
     Ok(table)
 }
 
-fn find_and_print_all_magics(slider: Arc<dyn Move + Send + Sync + 'static>, slider_name: &str, rng: Arc<Mutex<Rng>>) {
+fn find_and_print_all_magics(
+    slider: Arc<dyn Move + Send + Sync + 'static>,
+    slider_name: &str,
+    rng: Arc<Mutex<Rng>>,
+) {
     println!(
         "pub const {}_MAGICS: &[MagicEntry; Square::NUM] = &[",
         slider_name
     );
-    let total_table_size  = Arc::new(Mutex::new(0usize));
+    let total_table_size = Arc::new(Mutex::new(0usize));
     let mut pool = ThreadPool::new(8);
     for &square in &Square::ALL {
         let slider = Arc::clone(&slider);
         let rng = Arc::clone(&rng);
         let total_table_size = Arc::clone(&total_table_size);
-        pool.execute(move ||{
+        pool.execute(move || {
             find_and_print_step(slider, square, rng, total_table_size);
         });
     }
@@ -143,11 +147,17 @@ fn find_and_print_all_magics(slider: Arc<dyn Move + Send + Sync + 'static>, slid
     println!("];");
     println!(
         "pub const {}_TABLE_SIZE: usage = {} KiB;",
-        slider_name, *total_table_size.lock().unwrap() / 1024 * 16
+        slider_name,
+        *total_table_size.lock().unwrap() / 1024 * 16
     );
 }
 
-fn find_and_print_step(slider: Arc<dyn Move + Send + Sync + 'static>, square: Square, rng: Arc<Mutex<Rng>>, total_table_size: Arc<Mutex<usize>>) {
+fn find_and_print_step(
+    slider: Arc<dyn Move + Send + Sync + 'static>,
+    square: Square,
+    rng: Arc<Mutex<Rng>>,
+    total_table_size: Arc<Mutex<usize>>,
+) {
     let index_bits = slider.relevant_blockers(square).popcnt() as u8;
     let (entry, table) = find_magic(&*slider, square, index_bits, rng);
     // In the final move generator, each table is concatenated into one contiguous table
