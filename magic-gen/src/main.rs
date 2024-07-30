@@ -67,7 +67,7 @@ fn magic_index(entry: &MagicEntry, blockers: BitBoard) -> usize {
 // Given a sliding piece and a square, finds a magic number that
 // perfectly maps input blockers into its solution in a hash table
 fn find_magic(
-    slider: &Arc<dyn Move + Send + Sync + 'static>,
+    slider: &dyn Move,
     square: Square,
     index_bits: u8,
     rng: Arc<Mutex<Rng>>,
@@ -93,7 +93,7 @@ struct TableFillError;
 // Attempt to fill in a hash table using a magic number.
 // Fails if there are any non-constructive collisions.
 fn try_make_table(
-    slider: &Arc<dyn Move + Send + Sync + 'static>,
+    slider: &dyn Move,
     square: Square,
     magic_entry: &MagicEntry,
 ) -> Result<Vec<BitBoard>, TableFillError> {
@@ -149,7 +149,7 @@ fn find_and_print_all_magics(slider: Arc<dyn Move + Send + Sync + 'static>, slid
 
 fn find_and_print_step(slider: Arc<dyn Move + Send + Sync + 'static>, square: Square, rng: Arc<Mutex<Rng>>, total_table_size: Arc<Mutex<usize>>) {
     let index_bits = slider.relevant_blockers(square).popcnt() as u8;
-    let (entry, table) = find_magic(&slider, square, index_bits, rng);
+    let (entry, table) = find_magic(&*slider, square, index_bits, rng);
     // In the final move generator, each table is concatenated into one contiguous table
     // for convenience, so an offset is added to denote the start of each segment.
     let mut total_table_size = total_table_size.lock().unwrap();
