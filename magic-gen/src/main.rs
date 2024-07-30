@@ -1,7 +1,11 @@
 mod rng;
+mod threadpool;
+
+use std::{borrow::Borrow, sync::{Arc, Mutex}};
 
 use rng::*;
 use types::*;
+use threadpool::*;
 
 trait Move {
     fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard;
@@ -63,17 +67,20 @@ fn magic_index(entry: &MagicEntry, blockers: BitBoard) -> usize {
 // Given a sliding piece and a square, finds a magic number that
 // perfectly maps input blockers into its solution in a hash table
 fn find_magic(
-    slider: &dyn Move,
+    slider: &Arc<dyn Move + Send + Sync + 'static>,
     square: Square,
     index_bits: u8,
-    rng: &mut Rng,
+    rng: Arc<Mutex<Rng>>,
 ) -> (MagicEntry, Vec<BitBoard>) {
     let mask = slider.relevant_blockers(square);
     let shift = 128 - index_bits;
     loop {
         // Magics require a low number of active bits, so we AND
         // by two more random values to cut down on the bits set.
-        let magic = rng.next_u128() & rng.next_u128() & rng.next_u128();
+        let magic = {
+            let mut rng = rng.lock().unwrap();
+            rng.next_u128() & rng.next_u128() & rng.next_u128()
+        };
         let magic_entry = MagicEntry { mask, magic, shift };
         if let Ok(table) = try_make_table(slider, square, &magic_entry) {
             return (magic_entry, table);
@@ -86,7 +93,7 @@ struct TableFillError;
 // Attempt to fill in a hash table using a magic number.
 // Fails if there are any non-constructive collisions.
 fn try_make_table(
-    slider: &dyn Move,
+    slider: &Arc<dyn Move + Send + Sync + 'static>,
     square: Square,
     magic_entry: &MagicEntry,
 ) -> Result<Vec<BitBoard>, TableFillError> {
@@ -117,27 +124,34 @@ fn try_make_table(
     Ok(table)
 }
 
-fn find_and_print_all_magics(slider: &dyn Move, slider_name: &str, rng: &mut Rng) {
+fn find_and_print_all_magics(slider: Arc<dyn Move + Send + Sync + 'static>, slider_name: &str, rng: Arc<Mutex<Rng>>) {
     println!(
         "pub const {}_MAGICS: &[MagicEntry; Square::NUM] = &[",
         slider_name
     );
-    let mut total_table_size = 0;
+    let total_table_size  = Arc::new(Mutex::new(0usize));
+    let pool = ThreadPool::new(8);
     for &square in &Square::ALL {
-        find_and_print_step(slider, square, rng, &mut total_table_size);
+        let slider = Arc::clone(&slider);
+        let rng = Arc::clone(&rng);
+        let total_table_size = Arc::clone(&total_table_size);
+        pool.execute(move ||{
+            find_and_print_step(slider, square, rng, total_table_size);
+        });
     }
     println!("];");
     println!(
         "pub const {}_TABLE_SIZE: usage = {} KiB;",
-        slider_name, total_table_size / 1024 * 16
+        slider_name, *total_table_size.lock().unwrap() / 1024 * 16
     );
 }
 
-fn find_and_print_step(slider: &dyn Move, square: Square, rng: &mut Rng, total_table_size: &mut usize) {
+fn find_and_print_step(slider: Arc<dyn Move + Send + Sync + 'static>, square: Square, rng: Arc<Mutex<Rng>>, total_table_size: Arc<Mutex<usize>>) {
     let index_bits = slider.relevant_blockers(square).popcnt() as u8;
-    let (entry, table) = find_magic(slider, square, index_bits, rng);
+    let (entry, table) = find_magic(&slider, square, index_bits, rng);
     // In the final move generator, each table is concatenated into one contiguous table
     // for convenience, so an offset is added to denote the start of each segment.
+    let mut total_table_size = total_table_size.lock().unwrap();
     println!(
         "    MagicEntry {{ mask: 0x{:016X}, magic: 0x{:032X}, shift: {}, offset: {} }},",
         entry.mask.0, entry.magic, entry.shift, total_table_size
@@ -146,6 +160,7 @@ fn find_and_print_step(slider: &dyn Move, square: Square, rng: &mut Rng, total_t
 }
 
 fn main() {
-    let mut rng = Rng::default();
-    find_and_print_all_magics(&ROOK, "ROOK", &mut rng);
+    let rng = Arc::new(Mutex::new(Rng::default()));
+    let rook = Arc::new(ROOK);
+    find_and_print_all_magics(rook, "ROOK", Arc::clone(&rng));
 }
