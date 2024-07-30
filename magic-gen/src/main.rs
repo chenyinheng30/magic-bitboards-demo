@@ -130,7 +130,7 @@ fn find_and_print_all_magics(slider: Arc<dyn Move + Send + Sync + 'static>, slid
         slider_name
     );
     let total_table_size  = Arc::new(Mutex::new(0usize));
-    let pool = ThreadPool::new(8);
+    let mut pool = ThreadPool::new(8);
     for &square in &Square::ALL {
         let slider = Arc::clone(&slider);
         let rng = Arc::clone(&rng);
@@ -139,6 +139,7 @@ fn find_and_print_all_magics(slider: Arc<dyn Move + Send + Sync + 'static>, slid
             find_and_print_step(slider, square, rng, total_table_size);
         });
     }
+    pool.wait();
     println!("];");
     println!(
         "pub const {}_TABLE_SIZE: usage = {} KiB;",
