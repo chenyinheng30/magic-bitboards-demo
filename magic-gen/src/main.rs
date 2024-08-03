@@ -3,7 +3,9 @@ mod rng;
 mod rook;
 mod threadpool;
 
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap, sync::{Arc, Mutex}
+};
 
 use clap::Parser;
 use generate::*;
@@ -81,18 +83,77 @@ struct Cli {
     thread_count: Option<usize>,
 }
 
-fn main() {
+enum TasksOption {
+    Task(String),
+    All,
+    Nothing,
+}
+
+struct TasksManage<'a> {
+    tasks: HashMap<String, Box<dyn FnMut() -> () + 'a>>,
+}
+
+#[derive(Debug)]
+enum TasksFinishWithErr {
+    TaskNoFound,
+    DoNoThing,
+}
+
+impl<'a> TasksManage<'a> {
+    fn new() -> Self {
+        TasksManage {
+            tasks: HashMap::new(),
+        }
+    }
+
+    fn insert(&mut self, name: &str, task: Box<dyn FnMut() -> () + 'a>) {
+        let name = name.to_uppercase();
+        self.tasks.insert(name, task);
+    }
+
+    fn run(&mut self, tasks_option: TasksOption) -> Result<(), TasksFinishWithErr> {
+        match tasks_option {
+            TasksOption::Task(name) => {
+                if let Some(task) = self.tasks.get_mut(&name) {
+                    task();
+                    Ok(())
+                } else {
+                    Err(TasksFinishWithErr::TaskNoFound)
+                }
+            }
+            TasksOption::All => {
+                if self.tasks.is_empty() {
+                    Err(TasksFinishWithErr::DoNoThing)
+                } else {
+                    for task in self.tasks.values_mut() {
+                        task()
+                    }
+                    Ok(())
+                }
+            }
+            TasksOption::Nothing => Err(TasksFinishWithErr::DoNoThing),
+        }
+    }
+}
+
+fn main() -> Result<(), TasksFinishWithErr>{
     let cli = Cli::parse();
     let task_name = cli.task_name.as_deref();
-    let mut worker;
-    if let Some(thread_count) = cli.thread_count {
-        worker = FindMagicsWorker::new(thread_count);
+    let mut worker = if let Some(thread_count) = cli.thread_count {
+        FindMagicsWorker::new(thread_count)
     } else {
-        worker = FindMagicsWorker::new(1);
-    }
-    if task_name == None || task_name == Some("rook") {
-        let rook = Slider::new([(1, 0), (0, -1), (-1, 0), (0, 1)]);
+        FindMagicsWorker::new(1)
+    };
+    let task = match task_name {
+        Some(name) if name != "none" => TasksOption::Task(name.to_uppercase()),
+        Some(_) => TasksOption::Nothing,
+        None => TasksOption::All,
+    };
+    let mut tasks_manage = TasksManage::new();
+    tasks_manage.insert("ROOK", Box::new(||{
+        let rook = Slider::new([(1, 0), (0, 1), (-1, 0), (0, -1)]);
         let rook = Arc::new(rook);
         worker.find_and_print_all_magics(rook, "ROOK");
-    }
+    }));
+    tasks_manage.run(task)
 }
