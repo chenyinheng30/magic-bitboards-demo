@@ -4,6 +4,7 @@ use crate::generate::ChessMove;
 
 pub struct Slider {
     deltas: [(i8, i8); 4],
+    start_range: Vec<Square>,
 }
 
 impl ChessMove for Slider {
@@ -35,10 +36,17 @@ impl ChessMove for Slider {
         blockers &= !square.bitboard();
         blockers
     }
+
+    fn start_range(&self) -> Vec<Square> {
+        self.start_range.clone()
+    }
 }
 
 impl Slider {
-    pub fn new(deltas: [(i8, i8); 4]) -> Slider {
-        Slider { deltas }
+    pub fn new(deltas: [(i8, i8); 4], start_range: Vec<Square>) -> Slider {
+        Slider {
+            deltas,
+            start_range,
+        }
     }
 }

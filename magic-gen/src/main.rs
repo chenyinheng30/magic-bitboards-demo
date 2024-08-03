@@ -1,20 +1,22 @@
 mod cannon;
 mod generate;
+mod knight;
 mod rng;
 mod rook;
 mod threadpool;
 
 use std::{
-    collections::HashMap, sync::{Arc, Mutex}
+    collections::HashMap,
+    sync::{Arc, Mutex},
 };
 
 use cannon::CannonAttack;
 use clap::Parser;
-use generate::*;
-use rng::*;
+use generate::{find_magic, ChessMove};
+use rng::Rng;
 use rook::Slider;
-use threadpool::*;
-use types::*;
+use threadpool::ThreadPool;
+use types::Square;
 
 struct FindMagicsWorker {
     pool: ThreadPool,
@@ -39,7 +41,7 @@ impl FindMagicsWorker {
             slider_name
         );
         let total_table_size = Arc::new(Mutex::new(0usize));
-        for &square in &Square::ALL {
+        for square in slider.start_range() {
             let slider = Arc::clone(&slider);
             let rng = Arc::clone(&self.rng);
             let total_table_size = Arc::clone(&total_table_size);
@@ -140,7 +142,7 @@ impl<'a> TasksManage<'a> {
     }
 }
 
-fn main() -> Result<(), TasksFinishWithErr>{
+fn main() -> Result<(), TasksFinishWithErr> {
     let cli = Cli::parse();
     let task_name = cli.task_name.as_deref();
     let worker = if let Some(thread_count) = cli.thread_count {
@@ -154,15 +156,21 @@ fn main() -> Result<(), TasksFinishWithErr>{
         None => TasksOption::All,
     };
     let mut tasks_manage = TasksManage::new(worker);
-    tasks_manage.insert("ROOK", Box::new(|worker: &mut FindMagicsWorker|{
-        let rook = Slider::new([(1, 0), (0, 1), (-1, 0), (0, -1)]);
-        let rook = Arc::new(rook);
-        worker.find_and_print_all_magics(rook, "ROOK");
-    }));
-    tasks_manage.insert("CANNON", Box::new(|worker: &mut FindMagicsWorker|{
-        let cannon = CannonAttack::new();
-        let cannon = Arc::new(cannon);
-        worker.find_and_print_all_magics(cannon, "CANNON");
-    }));
+    tasks_manage.insert(
+        "ROOK",
+        Box::new(|worker: &mut FindMagicsWorker| {
+            let rook = Slider::new([(1, 0), (0, 1), (-1, 0), (0, -1)], Vec::from(Square::ALL));
+            let rook = Arc::new(rook);
+            worker.find_and_print_all_magics(rook, "ROOK");
+        }),
+    );
+    tasks_manage.insert(
+        "CANNON",
+        Box::new(|worker: &mut FindMagicsWorker| {
+            let cannon = CannonAttack::new();
+            let cannon = Arc::new(cannon);
+            worker.find_and_print_all_magics(cannon, "CANNON");
+        }),
+    );
     tasks_manage.run(task)
 }

@@ -1,4 +1,4 @@
-use types::BitBoard;
+use types::{BitBoard, Square};
 
 use crate::ChessMove;
 
@@ -15,7 +15,7 @@ impl CannonAttack {
 }
 
 impl ChessMove for CannonAttack {
-    fn moves(&self, square: types::Square, blockers: types::BitBoard) -> types::BitBoard {
+    fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard {
         let mut moves = BitBoard::EMPTY;
         for (df, dr) in self.deltas {
             let mut ray = square;
@@ -40,7 +40,7 @@ impl ChessMove for CannonAttack {
         moves
     }
 
-    fn relevant_blockers(&self, square: types::Square) -> types::BitBoard {
+    fn relevant_blockers(&self, square: Square) -> BitBoard {
         let mut blockers = BitBoard::EMPTY;
         for (df, dr) in self.deltas {
             let mut ray = square;
@@ -51,5 +51,9 @@ impl ChessMove for CannonAttack {
         }
         blockers &= !square.bitboard();
         blockers
+    }
+
+    fn start_range(&self) -> Vec<Square> {
+        Vec::from(Square::ALL)
     }
 }

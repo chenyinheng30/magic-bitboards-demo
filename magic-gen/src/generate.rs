@@ -1,10 +1,11 @@
+use crate::rng::Rng;
 use std::sync::{Arc, Mutex};
 use types::{BitBoard, Square};
-use crate::rng::Rng;
 
 pub trait ChessMove {
     fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard;
     fn relevant_blockers(&self, square: Square) -> BitBoard;
+    fn start_range(&self) -> Vec<Square>;
 }
 
 pub struct MagicEntry {
