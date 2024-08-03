@@ -44,7 +44,7 @@ impl<const N: usize> ChessMove for LameLeaper<N> {
     }
 
     fn start_range(&self) -> Vec<types::Square> {
-        Vec::from(Square::ALL)
+        self.start_range.clone()
     }
 }
 
