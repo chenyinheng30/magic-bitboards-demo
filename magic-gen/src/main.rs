@@ -176,11 +176,11 @@ fn main() -> Result<(), TasksFinishWithErr> {
         }),
     );
     tasks_manage.insert(
-        "KINGHT",
+        "KNIGHT",
         Box::new(|worker: &mut FindMagicsWorker| {
             let knight = LameLeaper::new(KNIGHT_DELTAS, KNIGHT_LAMELS, Vec::from(Square::ALL));
             let knight = Arc::new(knight);
-            worker.find_and_print_all_magics(knight, "KINGHT");
+            worker.find_and_print_all_magics(knight, "KNIGHT");
         }),
     );
     tasks_manage.insert(
