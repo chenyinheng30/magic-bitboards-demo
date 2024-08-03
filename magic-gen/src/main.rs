@@ -1,6 +1,7 @@
 mod cannon;
 mod generate;
 mod knight;
+mod pawn;
 mod rng;
 mod rook;
 mod threadpool;
@@ -16,10 +17,11 @@ use generate::{find_magic, ChessMove};
 use knight::{
     LameLeaper, BISHOP_DELTAS, BISHOP_LAMELS, BISHOP_START_RANGE, KNIGHT_DELTAS, KNIGHT_LAMELS,
 };
+use pawn::{Pawn, ToNeighbour, BLACK_PAWN, RED_PAWN};
 use rng::Rng;
 use rook::{Slider, SLIDER_ONE_STEP};
 use threadpool::ThreadPool;
-use types::Square;
+use types::{BitBoard, Square};
 
 struct FindMagicsWorker {
     pool: ThreadPool,
@@ -73,8 +75,8 @@ impl FindMagicsWorker {
         // for convenience, so an offset is added to denote the start of each segment.
         let mut total_table_size = total_table_size.lock().unwrap();
         println!(
-            "    MagicEntry {{ mask: 0x{:016X}, magic: 0x{:032X}, shift: {}, offset: {} }},",
-            entry.mask.0, entry.magic, entry.shift, total_table_size
+            "    MagicEntry {{ square: {:?}, magic: 0x{:032X}, shift: {}, offset: {} }},",
+            square, entry.magic, entry.shift, total_table_size
         );
         *total_table_size += table.len();
     }
@@ -190,6 +192,50 @@ fn main() -> Result<(), TasksFinishWithErr> {
             let bishop = LameLeaper::new(BISHOP_DELTAS, BISHOP_LAMELS, start_range);
             let bishop = Arc::new(bishop);
             worker.find_and_print_all_magics(bishop, "BISHOP");
+        }),
+    );
+    tasks_manage.insert(
+        "RED_PAWN",
+        Box::new(|worker: &mut FindMagicsWorker| {
+            let pawn = ToNeighbour::pawn(Pawn {
+                begin: 3,
+                end: 9,
+                offset: 0,
+                range: RED_PAWN,
+                end_mask: BitBoard(0x1ff << 81),
+            });
+            let pawn = Arc::new(pawn);
+            worker.find_and_print_all_magics(pawn, "RED_PAWN");
+        }),
+    );
+    tasks_manage.insert(
+        "BLACK_PAWN",
+        Box::new(|worker: &mut FindMagicsWorker| {
+            let pawn = ToNeighbour::pawn(Pawn {
+                begin: 6,
+                end: 0,
+                offset: 1,
+                range: BLACK_PAWN,
+                end_mask: BitBoard(0x1ff),
+            });
+            let pawn = Arc::new(pawn);
+            worker.find_and_print_all_magics(pawn, "BLACK_PAWN");
+        }),
+    );
+    tasks_manage.insert(
+        "ADVISOR",
+        Box::new(|worker: &mut FindMagicsWorker| {
+            let advisor = ToNeighbour::advisor();
+            let advisor = Arc::new(advisor);
+            worker.find_and_print_all_magics(advisor, "ADVISOR");
+        }),
+    );
+    tasks_manage.insert(
+        "KING",
+        Box::new(|worker: &mut FindMagicsWorker| {
+            let king = ToNeighbour::king();
+            let king = Arc::new(king);
+            worker.find_and_print_all_magics(king, "KING");
         }),
     );
     tasks_manage.run(task)
