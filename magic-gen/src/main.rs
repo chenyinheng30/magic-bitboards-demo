@@ -1,3 +1,4 @@
+mod cannon;
 mod generate;
 mod rng;
 mod rook;
@@ -7,6 +8,7 @@ use std::{
     collections::HashMap, sync::{Arc, Mutex}
 };
 
+use cannon::CannonAttack;
 use clap::Parser;
 use generate::*;
 use rng::*;
@@ -90,7 +92,8 @@ enum TasksOption {
 }
 
 struct TasksManage<'a> {
-    tasks: HashMap<String, Box<dyn FnMut() -> () + 'a>>,
+    worker: FindMagicsWorker,
+    tasks: HashMap<String, Box<dyn Fn(&mut FindMagicsWorker) -> () + 'a>>,
 }
 
 #[derive(Debug)]
@@ -100,13 +103,14 @@ enum TasksFinishWithErr {
 }
 
 impl<'a> TasksManage<'a> {
-    fn new() -> Self {
+    fn new(worker: FindMagicsWorker) -> Self {
         TasksManage {
+            worker,
             tasks: HashMap::new(),
         }
     }
 
-    fn insert(&mut self, name: &str, task: Box<dyn FnMut() -> () + 'a>) {
+    fn insert(&mut self, name: &str, task: Box<dyn Fn(&mut FindMagicsWorker) -> () + 'a>) {
         let name = name.to_uppercase();
         self.tasks.insert(name, task);
     }
@@ -115,7 +119,7 @@ impl<'a> TasksManage<'a> {
         match tasks_option {
             TasksOption::Task(name) => {
                 if let Some(task) = self.tasks.get_mut(&name) {
-                    task();
+                    task(&mut self.worker);
                     Ok(())
                 } else {
                     Err(TasksFinishWithErr::TaskNoFound)
@@ -126,7 +130,7 @@ impl<'a> TasksManage<'a> {
                     Err(TasksFinishWithErr::DoNoThing)
                 } else {
                     for task in self.tasks.values_mut() {
-                        task()
+                        task(&mut self.worker)
                     }
                     Ok(())
                 }
@@ -139,7 +143,7 @@ impl<'a> TasksManage<'a> {
 fn main() -> Result<(), TasksFinishWithErr>{
     let cli = Cli::parse();
     let task_name = cli.task_name.as_deref();
-    let mut worker = if let Some(thread_count) = cli.thread_count {
+    let worker = if let Some(thread_count) = cli.thread_count {
         FindMagicsWorker::new(thread_count)
     } else {
         FindMagicsWorker::new(1)
@@ -149,11 +153,16 @@ fn main() -> Result<(), TasksFinishWithErr>{
         Some(_) => TasksOption::Nothing,
         None => TasksOption::All,
     };
-    let mut tasks_manage = TasksManage::new();
-    tasks_manage.insert("ROOK", Box::new(||{
+    let mut tasks_manage = TasksManage::new(worker);
+    tasks_manage.insert("ROOK", Box::new(|worker: &mut FindMagicsWorker|{
         let rook = Slider::new([(1, 0), (0, 1), (-1, 0), (0, -1)]);
         let rook = Arc::new(rook);
         worker.find_and_print_all_magics(rook, "ROOK");
+    }));
+    tasks_manage.insert("CANNON", Box::new(|worker: &mut FindMagicsWorker|{
+        let cannon = CannonAttack::new();
+        let cannon = Arc::new(cannon);
+        worker.find_and_print_all_magics(cannon, "CANNON");
     }));
     tasks_manage.run(task)
 }
