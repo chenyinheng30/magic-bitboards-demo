@@ -13,8 +13,11 @@ use std::{
 use cannon::CannonAttack;
 use clap::Parser;
 use generate::{find_magic, ChessMove};
+use knight::{
+    LameLeaper, BISHOP_DELTAS, BISHOP_LAMELS, BISHOP_START_RANGE, KNIGHT_DELTAS, KNIGHT_LAMELS,
+};
 use rng::Rng;
-use rook::Slider;
+use rook::{Slider, SLIDER_ONE_STEP};
 use threadpool::ThreadPool;
 use types::Square;
 
@@ -159,7 +162,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "ROOK",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let rook = Slider::new([(1, 0), (0, 1), (-1, 0), (0, -1)], Vec::from(Square::ALL));
+            let rook = Slider::new(SLIDER_ONE_STEP, Vec::from(Square::ALL));
             let rook = Arc::new(rook);
             worker.find_and_print_all_magics(rook, "ROOK");
         }),
@@ -170,6 +173,23 @@ fn main() -> Result<(), TasksFinishWithErr> {
             let cannon = CannonAttack::new();
             let cannon = Arc::new(cannon);
             worker.find_and_print_all_magics(cannon, "CANNON");
+        }),
+    );
+    tasks_manage.insert(
+        "KINGHT",
+        Box::new(|worker: &mut FindMagicsWorker| {
+            let knight = LameLeaper::new(KNIGHT_DELTAS, KNIGHT_LAMELS, Vec::from(Square::ALL));
+            let knight = Arc::new(knight);
+            worker.find_and_print_all_magics(knight, "KINGHT");
+        }),
+    );
+    tasks_manage.insert(
+        "BISHOP",
+        Box::new(|worker: &mut FindMagicsWorker| {
+            let start_range = Vec::from(BISHOP_START_RANGE);
+            let bishop = LameLeaper::new(BISHOP_DELTAS, BISHOP_LAMELS, start_range);
+            let bishop = Arc::new(bishop);
+            worker.find_and_print_all_magics(bishop, "BISHOP");
         }),
     );
     tasks_manage.run(task)
