@@ -2,6 +2,11 @@ use super::*;
 
 use std::ops::*;
 
+pub enum Color {
+    Red,
+    Black,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
 pub struct BitBoard(pub u128);
 
@@ -184,7 +189,11 @@ mod tests {
             . . . . . . . . .
             . . . . . . . . .
         };
-        assert!(board.0 == 0x5540000AA8000000u128, "fail with board = {:?}", board);
+        assert!(
+            board.0 == 0x5540000AA8000000u128,
+            "fail with board = {:?}",
+            board
+        );
     }
 
     #[test]
@@ -201,7 +210,11 @@ mod tests {
             . . . . . . . . .
             . . . . . . . . .
         };
-        assert!(board.0 == 0x11620002A8000000u128, "fail with board = {:?}", board);
+        assert!(
+            board.0 == 0x11620002A8000000u128,
+            "fail with board = {:?}",
+            board
+        );
     }
 
     #[test]
@@ -218,6 +231,10 @@ mod tests {
             X . . . . . . . .
             . . . . . . . . X
         };
-        assert!(board.0 == 0x20200000000000000000300u128, "fail with board = {:?}", board);
+        assert!(
+            board.0 == 0x20200000000000000000300u128,
+            "fail with board = {:?}",
+            board
+        );
     }
 }
