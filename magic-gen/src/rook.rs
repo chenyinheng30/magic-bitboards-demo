@@ -43,10 +43,12 @@ impl ChessMove for Slider {
 }
 
 impl Slider {
-    pub fn new(deltas: [(i8, i8); 4], start_range: Vec<Square>) -> Slider {
+    pub const fn new(deltas: [(i8, i8); 4], start_range: Vec<Square>) -> Slider {
         Slider {
             deltas,
             start_range,
         }
     }
 }
+
+pub const SLIDER_ONE_STEP: [(i8, i8); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
