@@ -2,3 +2,5 @@
 members = [
     "magic-gen",
 ]
+
+resolver = "2"
