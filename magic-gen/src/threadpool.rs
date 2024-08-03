@@ -5,9 +5,9 @@ use std::{
 
 pub struct ThreadPool {
     _workers: Vec<Worker>,
+    count: usize,
     sender: mpsc::Sender<Job>,
     receiver: mpsc::Receiver<()>,
-    count: usize,
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
@@ -69,8 +69,11 @@ impl Worker {
         sender: mpsc::Sender<()>,
     ) -> Worker {
         let thread = thread::spawn(move || loop {
-            let job = receiver.lock().unwrap().recv().unwrap();
-            job();
+            let job = receiver.lock().unwrap().recv();
+            match job {
+                Ok(job) => job(),
+                Err(_) => break,
+            }
             sender.send(()).unwrap()
         });
 
