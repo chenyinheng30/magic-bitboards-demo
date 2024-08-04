@@ -41,11 +41,13 @@ impl FindMagicsWorker {
         slider: Arc<dyn ChessMove + Send + Sync + 'static>,
         slider_name: &str,
     ) {
+        let start_range = slider.start_range();
         println!(
-            "pub const {}_MAGICS: &[MagicEntry; Square::NUM] = &[",
-            slider_name
+            "pub const {}_MAGICS: &[MagicEntry; {}] = &[",
+            slider_name,
+            start_range.len()
         );
-        for square in slider.start_range() {
+        for square in start_range {
             let slider = Arc::clone(&slider);
             let rng = Arc::clone(&self.rng);
             self.pool.execute(move || {
@@ -62,13 +64,10 @@ impl FindMagicsWorker {
         rng: Arc<Mutex<Rng>>,
     ) {
         let index_bits = slider.relevant_blockers(square).popcnt() as u8;
-        let (entry, table) = find_magic(&*slider, square, index_bits, rng);
+        let (entry, _) = find_magic(&*slider, square, index_bits, rng);
         // In the final move generator, each table is concatenated into one contiguous table
         // for convenience, so an offset is added to denote the start of each segment.
-        println!(
-            "    MagicEntryGen {{ square: {:?}, magic: 0x{:032X}, shift: {}, size: {} }},",
-            square, entry.magic, entry.shift, table.len()
-        );
+        println!("    {},", entry);
     }
 }
 

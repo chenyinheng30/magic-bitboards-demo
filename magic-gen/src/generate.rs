@@ -1,5 +1,8 @@
 use crate::rng::Rng;
-use std::sync::{Arc, Mutex};
+use std::{
+    fmt::Display,
+    sync::{Arc, Mutex},
+};
 use types::{BitBoard, Square};
 
 pub trait ChessMove {
@@ -12,6 +15,23 @@ pub struct MagicEntry {
     pub mask: BitBoard,
     pub magic: u128,
     pub shift: u8,
+}
+
+pub struct MagicEntryGen {
+    pub square: Square,
+    pub magic: u128,
+    pub shift: u8,
+    pub size: usize,
+}
+
+impl Display for MagicEntryGen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "MagicEntryGen {{ square: {:?}, magic: 0x{:032X}, shift: {}, size: {} }}",
+            self.square, self.magic, self.shift, self.size
+        )
+    }
 }
 
 pub fn magic_index(entry: &MagicEntry, blockers: BitBoard) -> usize {
@@ -28,7 +48,7 @@ pub fn find_magic(
     square: Square,
     index_bits: u8,
     rng: Arc<Mutex<Rng>>,
-) -> (MagicEntry, Vec<BitBoard>) {
+) -> (MagicEntryGen, Vec<BitBoard>) {
     let mask = slider.relevant_blockers(square);
     let shift = 128 - index_bits;
     loop {
@@ -40,7 +60,13 @@ pub fn find_magic(
         };
         let magic_entry = MagicEntry { mask, magic, shift };
         if let Ok(table) = try_make_table(slider, square, &magic_entry) {
-            return (magic_entry, table);
+            let magic_entry_gen = MagicEntryGen {
+                square,
+                magic,
+                shift,
+                size: table.len(),
+            };
+            return (magic_entry_gen, table);
         }
     }
 }
