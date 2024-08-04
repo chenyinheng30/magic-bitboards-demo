@@ -1,9 +1,3 @@
-mod cannon;
-mod generate;
-mod knight;
-mod pawn;
-mod rng;
-mod rook;
 mod threadpool;
 
 use std::{
@@ -11,17 +5,14 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use cannon::CannonAttack;
 use clap::Parser;
-use generate::{find_magic, ChessMove};
-use knight::{
-    LameLeaper, BISHOP_DELTAS, BISHOP_LAMELS, BISHOP_START_RANGE, KNIGHT_DELTAS, KNIGHT_LAMELS,
-};
-use pawn::{Pawn, ToNeighbour, BLACK_PAWN, RED_PAWN};
-use rng::Rng;
-use rook::{Slider, SLIDER_ONE_STEP};
 use threadpool::ThreadPool;
-use types::{BitBoard, Square};
+use types::{Color, Square};
+use xq::{
+    generate::{find_magic, ChessMove},
+    rng::Rng,
+    *,
+};
 
 struct FindMagicsWorker {
     pool: ThreadPool,
@@ -153,7 +144,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "ROOK",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let rook = Slider::new(SLIDER_ONE_STEP, Vec::from(Square::ALL));
+            let rook = rook();
             let rook = Arc::new(rook);
             worker.find_and_print_all_magics(rook, "ROOK");
         }),
@@ -161,7 +152,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "CANNON",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let cannon = CannonAttack::new();
+            let cannon = cannon();
             let cannon = Arc::new(cannon);
             worker.find_and_print_all_magics(cannon, "CANNON");
         }),
@@ -169,7 +160,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "KNIGHT",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let knight = LameLeaper::new(KNIGHT_DELTAS, KNIGHT_LAMELS, Vec::from(Square::ALL));
+            let knight = knight();
             let knight = Arc::new(knight);
             worker.find_and_print_all_magics(knight, "KNIGHT");
         }),
@@ -177,8 +168,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "BISHOP",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let start_range = Vec::from(BISHOP_START_RANGE);
-            let bishop = LameLeaper::new(BISHOP_DELTAS, BISHOP_LAMELS, start_range);
+            let bishop = bishop();
             let bishop = Arc::new(bishop);
             worker.find_and_print_all_magics(bishop, "BISHOP");
         }),
@@ -186,13 +176,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "RED_PAWN",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let pawn = ToNeighbour::pawn(Pawn {
-                begin: 3,
-                end: 9,
-                offset: 0,
-                range: RED_PAWN,
-                end_mask: BitBoard(0x1ff << 81),
-            });
+            let pawn  = pawn(Color::Red);
             let pawn = Arc::new(pawn);
             worker.find_and_print_all_magics(pawn, "RED_PAWN");
         }),
@@ -200,13 +184,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "BLACK_PAWN",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let pawn = ToNeighbour::pawn(Pawn {
-                begin: 6,
-                end: 0,
-                offset: 1,
-                range: BLACK_PAWN,
-                end_mask: BitBoard(0x1ff),
-            });
+            let pawn = pawn(Color::Black);
             let pawn = Arc::new(pawn);
             worker.find_and_print_all_magics(pawn, "BLACK_PAWN");
         }),
@@ -214,7 +192,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "ADVISOR",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let advisor = ToNeighbour::advisor();
+            let advisor = advisor();
             let advisor = Arc::new(advisor);
             worker.find_and_print_all_magics(advisor, "ADVISOR");
         }),
@@ -222,7 +200,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
     tasks_manage.insert(
         "KING",
         Box::new(|worker: &mut FindMagicsWorker| {
-            let king = ToNeighbour::king();
+            let king = king();
             let king = Arc::new(king);
             worker.find_and_print_all_magics(king, "KING");
         }),
