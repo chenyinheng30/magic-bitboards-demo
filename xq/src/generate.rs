@@ -28,7 +28,7 @@ impl Display for MagicEntryGen {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "MagicEntryGen {{ square: {:?}, magic: 0x{:032X}, shift: {}, size: {} }}",
+            "{{ \"square\": \"{:?}\", \"magic\": \"0x{:032X}\", \"shift\": {}, \"size\": {} }}",
             self.square, self.magic, self.shift, self.size
         )
     }

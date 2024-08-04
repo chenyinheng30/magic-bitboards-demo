@@ -34,9 +34,8 @@ impl FindMagicsWorker {
     ) {
         let start_range = slider.start_range();
         println!(
-            "pub const {}_MAGICS: &[MagicEntry; {}] = &[",
+            "\"{}_magics\" : [",
             slider_name,
-            start_range.len()
         );
         for square in start_range {
             let slider = Arc::clone(&slider);
@@ -46,7 +45,7 @@ impl FindMagicsWorker {
             });
         }
         self.pool.wait();
-        println!("];");
+        println!("],");
     }
 
     fn find_and_print_step(
@@ -146,7 +145,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
         Box::new(|worker: &mut FindMagicsWorker| {
             let rook = rook();
             let rook = Arc::new(rook);
-            worker.find_and_print_all_magics(rook, "ROOK");
+            worker.find_and_print_all_magics(rook, "rook");
         }),
     );
     tasks_manage.insert(
@@ -154,7 +153,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
         Box::new(|worker: &mut FindMagicsWorker| {
             let cannon = cannon();
             let cannon = Arc::new(cannon);
-            worker.find_and_print_all_magics(cannon, "CANNON");
+            worker.find_and_print_all_magics(cannon, "cannon");
         }),
     );
     tasks_manage.insert(
@@ -162,7 +161,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
         Box::new(|worker: &mut FindMagicsWorker| {
             let knight = knight();
             let knight = Arc::new(knight);
-            worker.find_and_print_all_magics(knight, "KNIGHT");
+            worker.find_and_print_all_magics(knight, "knight");
         }),
     );
     tasks_manage.insert(
@@ -170,7 +169,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
         Box::new(|worker: &mut FindMagicsWorker| {
             let bishop = bishop();
             let bishop = Arc::new(bishop);
-            worker.find_and_print_all_magics(bishop, "BISHOP");
+            worker.find_and_print_all_magics(bishop, "bishop");
         }),
     );
     tasks_manage.insert(
@@ -178,7 +177,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
         Box::new(|worker: &mut FindMagicsWorker| {
             let pawn  = pawn(Color::Red);
             let pawn = Arc::new(pawn);
-            worker.find_and_print_all_magics(pawn, "RED_PAWN");
+            worker.find_and_print_all_magics(pawn, "red_pawn");
         }),
     );
     tasks_manage.insert(
@@ -186,7 +185,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
         Box::new(|worker: &mut FindMagicsWorker| {
             let pawn = pawn(Color::Black);
             let pawn = Arc::new(pawn);
-            worker.find_and_print_all_magics(pawn, "BLACK_PAWN");
+            worker.find_and_print_all_magics(pawn, "black_pawn");
         }),
     );
     tasks_manage.insert(
@@ -194,7 +193,7 @@ fn main() -> Result<(), TasksFinishWithErr> {
         Box::new(|worker: &mut FindMagicsWorker| {
             let advisor = advisor();
             let advisor = Arc::new(advisor);
-            worker.find_and_print_all_magics(advisor, "ADVISOR");
+            worker.find_and_print_all_magics(advisor, "advisor");
         }),
     );
     tasks_manage.insert(
@@ -202,8 +201,11 @@ fn main() -> Result<(), TasksFinishWithErr> {
         Box::new(|worker: &mut FindMagicsWorker| {
             let king = king();
             let king = Arc::new(king);
-            worker.find_and_print_all_magics(king, "KING");
+            worker.find_and_print_all_magics(king, "king");
         }),
     );
-    tasks_manage.run(task)
+    println!("{{");
+    tasks_manage.run(task)?;
+    println!("}}");
+    Ok(())
 }
