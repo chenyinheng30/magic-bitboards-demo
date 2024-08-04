@@ -7,7 +7,7 @@ pub struct ThreadPool {
     _workers: Vec<Worker>,
     count: usize,
     sender: mpsc::Sender<Job>,
-    receiver: mpsc::Receiver<()>,
+    _receiver: mpsc::Receiver<()>,
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
@@ -35,7 +35,7 @@ impl ThreadPool {
         ThreadPool {
             _workers: workers,
             sender,
-            receiver: pool_receiver,
+            _receiver: pool_receiver,
             count: 0,
         }
     }
@@ -49,9 +49,9 @@ impl ThreadPool {
         self.sender.send(job).unwrap();
     }
 
-    pub fn wait(&mut self) {
+    pub fn _wait(&mut self) {
         while self.count > 0 {
-            let _ = self.receiver.recv();
+            let _ = self._receiver.recv();
             self.count -= 1;
         }
     }
