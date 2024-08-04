@@ -57,9 +57,9 @@ impl FindMagicsWorker {
         self.pool.wait();
         println!("];");
         println!(
-            "pub const {}_TABLE_SIZE: usage = {} KiB;",
+            "pub const {}_TABLE_SIZE: usage = {};",
             slider_name,
-            *total_table_size.lock().unwrap() / 1024 * 16
+            *total_table_size.lock().unwrap()
         );
     }
 
