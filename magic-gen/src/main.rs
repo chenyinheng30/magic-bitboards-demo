@@ -45,40 +45,30 @@ impl FindMagicsWorker {
             "pub const {}_MAGICS: &[MagicEntry; Square::NUM] = &[",
             slider_name
         );
-        let total_table_size = Arc::new(Mutex::new(0usize));
         for square in slider.start_range() {
             let slider = Arc::clone(&slider);
             let rng = Arc::clone(&self.rng);
-            let total_table_size = Arc::clone(&total_table_size);
             self.pool.execute(move || {
-                FindMagicsWorker::find_and_print_step(slider, square, rng, total_table_size);
+                FindMagicsWorker::find_and_print_step(slider, square, rng);
             });
         }
         self.pool.wait();
         println!("];");
-        println!(
-            "pub const {}_TABLE_SIZE: usage = {};",
-            slider_name,
-            *total_table_size.lock().unwrap()
-        );
     }
 
     fn find_and_print_step(
         slider: Arc<dyn ChessMove + Send + Sync + 'static>,
         square: Square,
         rng: Arc<Mutex<Rng>>,
-        total_table_size: Arc<Mutex<usize>>,
     ) {
         let index_bits = slider.relevant_blockers(square).popcnt() as u8;
         let (entry, table) = find_magic(&*slider, square, index_bits, rng);
         // In the final move generator, each table is concatenated into one contiguous table
         // for convenience, so an offset is added to denote the start of each segment.
-        let mut total_table_size = total_table_size.lock().unwrap();
         println!(
-            "    MagicEntry {{ square: {:?}, magic: 0x{:032X}, shift: {}, offset: {} }},",
-            square, entry.magic, entry.shift, total_table_size
+            "    MagicEntryGen {{ square: {:?}, magic: 0x{:032X}, shift: {}, size: {} }},",
+            square, entry.magic, entry.shift, table.len()
         );
-        *total_table_size += table.len();
     }
 }
 
