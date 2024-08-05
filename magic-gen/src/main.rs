@@ -99,7 +99,10 @@ impl<'a> TasksManage<'a> {
         self.tasks.insert(name, task);
     }
 
-    fn run(&mut self, tasks_option: TasksOption) -> Result<HashMap<String, Vec<MagicEntryGen>>, TasksFinishWithErr> {
+    fn run(
+        &mut self,
+        tasks_option: TasksOption,
+    ) -> Result<HashMap<String, Vec<MagicEntryGen>>, TasksFinishWithErr> {
         let mut tables = HashMap::<String, Vec<MagicEntryGen>>::new();
         match tasks_option {
             TasksOption::Task(name) => {

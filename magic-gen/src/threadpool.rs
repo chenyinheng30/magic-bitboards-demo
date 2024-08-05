@@ -1,13 +1,14 @@
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{
+        mpsc,
+        Arc, Mutex,
+    },
     thread,
 };
 
 pub struct ThreadPool {
     _workers: Vec<Worker>,
-    count: usize,
     sender: mpsc::Sender<Job>,
-    _receiver: mpsc::Receiver<()>,
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
@@ -22,38 +23,22 @@ impl ThreadPool {
 
         let receiver = Arc::new(Mutex::new(receiver));
 
-        let (worker_sender, pool_receiver) = mpsc::channel();
-
         for id in 0..size {
-            workers.push(Worker::new(
-                id,
-                Arc::clone(&receiver),
-                worker_sender.clone(),
-            ));
+            workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
 
         ThreadPool {
             _workers: workers,
             sender,
-            _receiver: pool_receiver,
-            count: 0,
         }
     }
 
-    pub fn execute<F>(&mut self, f: F)
+    pub fn execute<F>(&self, f: F)
     where
         F: FnOnce() + Send + 'static,
     {
         let job = Box::new(f);
-        self.count += 1;
         self.sender.send(job).unwrap();
-    }
-
-    pub fn _wait(&mut self) {
-        while self.count > 0 {
-            let _ = self._receiver.recv();
-            self.count -= 1;
-        }
     }
 }
 
@@ -63,23 +48,41 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(
-        id: usize,
-        receiver: Arc<Mutex<mpsc::Receiver<Job>>>,
-        sender: mpsc::Sender<()>,
-    ) -> Worker {
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || loop {
             let job = receiver.lock().unwrap().recv();
             match job {
                 Ok(job) => job(),
                 Err(_) => break,
             }
-            sender.send(()).unwrap()
         });
 
         Worker {
             _id: id,
             _thread: thread,
+        }
+    }
+}
+
+pub mod future {
+    use std::sync::mpsc::{self, Receiver, Sender};
+
+    pub struct Binder<T> {
+        sender: Sender<T>,
+    }
+
+    pub fn tunnel<T>() -> (Binder<T>, Receiver<T>) {
+        let (sender, receiver) = mpsc::channel::<T>();
+        return (Binder { sender }, receiver);
+    }
+
+    impl<T> Binder<T> {
+        pub fn bind<F>(&self, function: F)
+        where
+            F: FnOnce() -> T,
+        {
+            let effect = function();
+            self.sender.send(effect).unwrap();
         }
     }
 }
