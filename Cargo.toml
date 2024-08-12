@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "magic-gen",
+    "magic-gen", "xq",
 ]
 resolver = "2"
 

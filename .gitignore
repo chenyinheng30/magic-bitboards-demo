@@ -1,4 +1,6 @@
 /target
 
-.vscode
-.vscode/*
+/.vscode
+/.vscode/*
+
+/magic-gen/tests/magic_table.rs

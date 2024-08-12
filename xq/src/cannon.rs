@@ -1,23 +1,38 @@
 use types::{BitBoard, Square};
 
-use crate::generate::ChessMove;
+use crate::{rook::SLIDER_ONE_STEP, generate::ChessMove};
 
-pub struct Slider {
+pub struct CannonAttack {
     deltas: [(i8, i8); 4],
 }
 
-impl ChessMove for Slider {
+impl CannonAttack {
+    pub fn new() -> Self {
+        CannonAttack { deltas: SLIDER_ONE_STEP }
+    }
+}
+
+impl ChessMove for CannonAttack {
     fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard {
         let mut moves = BitBoard::EMPTY;
-        for &(df, dr) in &self.deltas {
+        for (df, dr) in self.deltas {
             let mut ray = square;
             while !blockers.has(ray) {
                 if let Some(shifted) = ray.try_offset(df, dr) {
                     ray = shifted;
-                    moves |= ray.bitboard();
                 } else {
                     break;
                 }
+            }
+            if let Some(mut ray) = ray.try_offset(df, dr) {
+                while !blockers.has(ray) {
+                    if let Some(shifted) = ray.try_offset(df, dr) {
+                        ray = shifted;
+                    } else {
+                        break;
+                    }
+                }
+                moves |= ray.bitboard();
             }
         }
         moves
@@ -25,7 +40,7 @@ impl ChessMove for Slider {
 
     fn relevant_blockers(&self, square: Square) -> BitBoard {
         let mut blockers = BitBoard::EMPTY;
-        for &(df, dr) in &self.deltas {
+        for (df, dr) in self.deltas {
             let mut ray = square;
             while let Some(shifted) = ray.try_offset(df, dr) {
                 blockers |= ray.bitboard();
@@ -35,10 +50,8 @@ impl ChessMove for Slider {
         blockers &= !square.bitboard();
         blockers
     }
-}
 
-impl Slider {
-    pub fn new(deltas: [(i8, i8); 4]) -> Slider {
-        Slider { deltas }
+    fn start_range(&self) -> Vec<Square> {
+        Vec::from(Square::ALL)
     }
 }

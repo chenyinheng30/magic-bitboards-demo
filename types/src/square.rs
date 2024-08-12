@@ -6,7 +6,7 @@ macro_rules! simple_enum {
             $($variant:ident),*
         }
     )*) => {$(
-        #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+        #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
         pub enum $name {
             $($variant),*
         }

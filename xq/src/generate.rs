@@ -1,16 +1,26 @@
+use crate::rng::Rng;
+use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use types::{BitBoard, Square};
-use crate::rng::Rng;
 
 pub trait ChessMove {
     fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard;
     fn relevant_blockers(&self, square: Square) -> BitBoard;
+    fn start_range(&self) -> Vec<Square>;
 }
 
 pub struct MagicEntry {
     pub mask: BitBoard,
     pub magic: u128,
     pub shift: u8,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MagicEntryGen {
+    pub square: Square,
+    pub magic: String,
+    pub shift: u8,
+    pub size: usize,
 }
 
 pub fn magic_index(entry: &MagicEntry, blockers: BitBoard) -> usize {
@@ -27,7 +37,7 @@ pub fn find_magic(
     square: Square,
     index_bits: u8,
     rng: Arc<Mutex<Rng>>,
-) -> (MagicEntry, Vec<BitBoard>) {
+) -> (MagicEntryGen, Vec<BitBoard>) {
     let mask = slider.relevant_blockers(square);
     let shift = 128 - index_bits;
     loop {
@@ -39,7 +49,14 @@ pub fn find_magic(
         };
         let magic_entry = MagicEntry { mask, magic, shift };
         if let Ok(table) = try_make_table(slider, square, &magic_entry) {
-            return (magic_entry, table);
+            let magic = format!("0x{:032x}", magic);
+            let magic_entry_gen = MagicEntryGen {
+                square,
+                magic,
+                shift,
+                size: table.len(),
+            };
+            return (magic_entry_gen, table);
         }
     }
 }
