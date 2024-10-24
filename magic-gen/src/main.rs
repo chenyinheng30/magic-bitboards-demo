@@ -26,7 +26,7 @@ impl FindMagicsWorker {
         &mut self,
         slider: Arc<dyn ChessMove + Send + Sync + 'static>,
     ) -> Vec<MagicEntryGen> {
-        let start_range = slider.start_range();
+        let start_range = slider.possible_squares();
         let mut table = Vec::new();
         let receiver = {
             let (sender, receiver) = mpsc::channel();

@@ -24,7 +24,7 @@ impl ChessMove for ToNeighbour {
         self.moves(square, BitBoard(0))
     }
 
-    fn start_range(&self) -> Vec<Square> {
+    fn possible_squares(&self) -> Vec<Square> {
         self.start_range.into_iter().collect()
     }
 }

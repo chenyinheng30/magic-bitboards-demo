@@ -43,7 +43,7 @@ impl<const N: usize> ChessMove for LameLeaper<N> {
         blockers
     }
 
-    fn start_range(&self) -> Vec<types::Square> {
+    fn possible_squares(&self) -> Vec<types::Square> {
         self.start_range.clone()
     }
 }

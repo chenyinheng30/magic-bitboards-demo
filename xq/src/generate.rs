@@ -6,7 +6,7 @@ use types::{BitBoard, Square};
 pub trait ChessMove {
     fn moves(&self, square: Square, blockers: BitBoard) -> BitBoard;
     fn relevant_blockers(&self, square: Square) -> BitBoard;
-    fn start_range(&self) -> Vec<Square>;
+    fn possible_squares(&self) -> Vec<Square>;
 }
 
 pub struct MagicEntry {

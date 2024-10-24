@@ -37,7 +37,7 @@ impl ChessMove for Slider {
         blockers
     }
 
-    fn start_range(&self) -> Vec<Square> {
+    fn possible_squares(&self) -> Vec<Square> {
         self.start_range.clone()
     }
 }
