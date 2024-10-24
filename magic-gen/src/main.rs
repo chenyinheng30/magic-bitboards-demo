@@ -1,12 +1,9 @@
-mod threadpool;
-
 use clap::Parser;
 use generate::MagicEntryGen;
 use std::{
     collections::HashMap,
     sync::{mpsc, Arc, Mutex},
 };
-use threadpool::ThreadPool;
 use types::{Color, Square};
 use xq::{
     generate::{find_magic, ChessMove},
@@ -15,14 +12,12 @@ use xq::{
 };
 
 struct FindMagicsWorker {
-    pool: ThreadPool,
     rng: Arc<Mutex<Rng>>,
 }
 
 impl FindMagicsWorker {
-    fn new(size: usize) -> Self {
+    fn new() -> Self {
         FindMagicsWorker {
-            pool: ThreadPool::new(size),
             rng: Arc::new(Mutex::new(Rng::default())),
         }
     }
@@ -39,7 +34,7 @@ impl FindMagicsWorker {
                 let slider = Arc::clone(&slider);
                 let rng = Arc::clone(&self.rng);
                 let sender = sender.clone();
-                self.pool.execute(move || {
+                rayon::spawn(move || {
                     let g = FindMagicsWorker::find_and_print_step(slider, square, rng);
                     sender.send(g).unwrap();
                 });
@@ -77,9 +72,16 @@ struct TasksManage<'a> {
 }
 
 #[derive(Debug)]
-enum TasksFinishWithErr {
+enum Error {
     TaskNoFound,
     DoNoThing,
+    ThreadPoolBuildError,
+}
+
+impl From<rayon::ThreadPoolBuildError> for  Error {
+    fn from(_: rayon::ThreadPoolBuildError) -> Self {
+        Self::ThreadPoolBuildError
+    }
 }
 
 impl<'a> TasksManage<'a> {
@@ -102,7 +104,7 @@ impl<'a> TasksManage<'a> {
     fn run(
         &mut self,
         tasks_option: TasksOption,
-    ) -> Result<HashMap<String, Vec<MagicEntryGen>>, TasksFinishWithErr> {
+    ) -> Result<HashMap<String, Vec<MagicEntryGen>>, Error> {
         let mut tables = HashMap::<String, Vec<MagicEntryGen>>::new();
         match tasks_option {
             TasksOption::Task(name) => {
@@ -113,12 +115,12 @@ impl<'a> TasksManage<'a> {
                     tables.insert(name, table);
                     Ok(tables)
                 } else {
-                    Err(TasksFinishWithErr::TaskNoFound)
+                    Err(Error::TaskNoFound)
                 }
             }
             TasksOption::All => {
                 if self.tasks.is_empty() {
-                    Err(TasksFinishWithErr::DoNoThing)
+                    Err(Error::DoNoThing)
                 } else {
                     for (name, task) in self.tasks.iter() {
                         let table = task(&mut self.worker);
@@ -128,7 +130,7 @@ impl<'a> TasksManage<'a> {
                     Ok(tables)
                 }
             }
-            TasksOption::Nothing => Err(TasksFinishWithErr::DoNoThing),
+            TasksOption::Nothing => Err(Error::DoNoThing),
         }
     }
 }
@@ -143,13 +145,12 @@ struct Cli {
     jobs: Option<usize>,
 }
 
-fn main() -> Result<(), TasksFinishWithErr> {
+fn main() -> Result<(), Error> {
     let cli = Cli::parse();
     let task_name = cli.task_name.as_deref();
-    let worker = if let Some(thread_count) = cli.jobs {
-        FindMagicsWorker::new(thread_count)
-    } else {
-        FindMagicsWorker::new(1)
+    let worker = FindMagicsWorker::new();
+    if let Some(thread_count) = cli.jobs {
+        rayon::ThreadPoolBuilder::default().num_threads(thread_count).build()?;
     };
     let task = match task_name {
         Some(name) if name != "none" => TasksOption::Task(name.to_string()),
