@@ -26,7 +26,7 @@ pub struct MagicEntryGen {
 pub fn magic_index(entry: &MagicEntry, blockers: BitBoard) -> usize {
     let blockers = blockers & entry.mask;
     let hash = blockers.0.wrapping_mul(entry.magic as u128);
-    let index = (hash >> entry.shift) as usize;
+    let index = (hash.wrapping_shr(entry.shift.into())) as usize;
     index
 }
 

@@ -21,7 +21,7 @@ impl ChessMove for ToNeighbour {
     }
 
     fn relevant_blockers(&self, square: Square) -> BitBoard {
-        self.moves(square, BitBoard(0))
+        BitBoard::EMPTY
     }
 
     fn possible_squares(&self) -> Vec<Square> {
@@ -29,7 +29,7 @@ impl ChessMove for ToNeighbour {
     }
 }
 
-const RED_PALACE: BitBoard = bitboard![
+pub const RED_PALACE: BitBoard = bitboard![
     . . . . . . . . .
     . . . . . . . . .
     . . . . . . . . .
@@ -42,7 +42,7 @@ const RED_PALACE: BitBoard = bitboard![
     . . . X X X . . .
 ];
 
-const BLACK_PALACE: BitBoard = bitboard![
+pub const BLACK_PALACE: BitBoard = bitboard![
     . . . X X X . . .
     . . . X X X . . .
     . . . X X X . . .
@@ -124,7 +124,7 @@ impl ToNeighbour {
         }
     }
 
-    pub fn king() -> Self {
+    pub fn king_to_neighbour() -> Self {
         let mut masks = [BitBoard::EMPTY; 10];
         for rank in Rank::ALL {
             let rank = rank as usize;

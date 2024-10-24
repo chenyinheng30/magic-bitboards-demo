@@ -1,11 +1,13 @@
 mod cannon;
 pub mod generate;
+mod king;
 mod knight;
 mod pawn;
 pub mod rng;
 mod rook;
 
 use cannon::*;
+use king::King;
 use knight::*;
 use pawn::*;
 use rook::*;
@@ -50,6 +52,6 @@ pub fn advisor() -> ToNeighbour {
     ToNeighbour::advisor()
 }
 
-pub fn king() -> ToNeighbour {
-    ToNeighbour::king()
+pub fn king() -> King {
+    King::new()
 }
