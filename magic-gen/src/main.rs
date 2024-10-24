@@ -191,30 +191,6 @@ fn main() -> Result<(), Error> {
         }),
     );
     tasks_manage.insert(
-        "RED_PAWN",
-        Box::new(|worker: &mut FindMagicsWorker| {
-            let pawn = pawn(Color::Red);
-            let pawn = Arc::new(pawn);
-            worker.find_and_print_all_magics(pawn)
-        }),
-    );
-    tasks_manage.insert(
-        "BLACK_PAWN",
-        Box::new(|worker: &mut FindMagicsWorker| {
-            let pawn = pawn(Color::Black);
-            let pawn = Arc::new(pawn);
-            worker.find_and_print_all_magics(pawn)
-        }),
-    );
-    tasks_manage.insert(
-        "ADVISOR",
-        Box::new(|worker: &mut FindMagicsWorker| {
-            let advisor = advisor();
-            let advisor = Arc::new(advisor);
-            worker.find_and_print_all_magics(advisor)
-        }),
-    );
-    tasks_manage.insert(
         "KING",
         Box::new(|worker: &mut FindMagicsWorker| {
             let king = king();
