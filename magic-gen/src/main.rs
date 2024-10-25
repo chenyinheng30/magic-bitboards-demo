@@ -162,10 +162,10 @@ fn main() -> Result<(), Error> {
     };
     let mut tasks_manage = TasksManage::new(worker);
     tasks_manage.insert("ROOK", Arc::new(rook()));
-    tasks_manage.insert("CANNON",Arc::new(cannon()));
-    tasks_manage.insert("KNIGHT",Arc::new(knight()));
-    tasks_manage.insert("BISHOP",Arc::new(bishop()));
-    tasks_manage.insert("KING",Arc::new(king()));
+    tasks_manage.insert("CANNON", Arc::new(cannon()));
+    tasks_manage.insert("KNIGHT", Arc::new(knight()));
+    tasks_manage.insert("BISHOP", Arc::new(bishop()));
+    tasks_manage.insert("KING", Arc::new(king()));
     let tables = tasks_manage.run(task)?;
     println!("{}", serde_json::to_string(&tables).unwrap());
     Ok(())
