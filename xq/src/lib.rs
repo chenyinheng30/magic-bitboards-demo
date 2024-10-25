@@ -2,14 +2,12 @@ mod cannon;
 pub mod generate;
 mod king;
 mod knight;
-mod pawn;
 pub mod rng;
 mod rook;
 
 use cannon::*;
 use king::King;
 use knight::*;
-use pawn::*;
 use rook::*;
 
 pub fn rook() -> Slider {
@@ -27,29 +25,6 @@ pub fn knight() -> LameLeaper<8> {
 pub fn bishop() -> LameLeaper<4> {
     let start_range = Vec::from(BISHOP_START_RANGE);
     LameLeaper::new(BISHOP_DELTAS, BISHOP_LAMELS, start_range)
-}
-
-pub fn pawn(color: types::Color) -> ToNeighbour {
-    ToNeighbour::pawn(match color {
-        types::Color::Red => Pawn {
-            begin: 3,
-            end: 9,
-            offset: 0,
-            range: RED_PAWN,
-            end_mask: types::BitBoard(0x1ff << 81),
-        },
-        types::Color::Black => Pawn {
-            begin: 6,
-            end: 0,
-            offset: 1,
-            range: BLACK_PAWN,
-            end_mask: types::BitBoard(0x1ff),
-        },
-    })
-}
-
-pub fn advisor() -> ToNeighbour {
-    ToNeighbour::advisor()
 }
 
 pub fn king() -> King {

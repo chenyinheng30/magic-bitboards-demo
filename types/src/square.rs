@@ -126,7 +126,11 @@ mod tests {
             "fail with rank = {:?}!",
             s2.rank()
         );
-        assert!(s3.rank() == Rank::Tenth, "fail with rank = {:?}!", s3.rank());
+        assert!(
+            s3.rank() == Rank::Tenth,
+            "fail with rank = {:?}!",
+            s3.rank()
+        );
     }
 
     #[test]

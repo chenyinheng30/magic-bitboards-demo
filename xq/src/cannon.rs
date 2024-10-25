@@ -1,6 +1,6 @@
 use types::{BitBoard, Square};
 
-use crate::{rook::SLIDER_ONE_STEP, generate::ChessMove};
+use crate::{generate::ChessMove, rook::SLIDER_ONE_STEP};
 
 pub struct CannonAttack {
     deltas: [(i8, i8); 4],
@@ -8,7 +8,9 @@ pub struct CannonAttack {
 
 impl CannonAttack {
     pub fn new() -> Self {
-        CannonAttack { deltas: SLIDER_ONE_STEP }
+        CannonAttack {
+            deltas: SLIDER_ONE_STEP,
+        }
     }
 }
 

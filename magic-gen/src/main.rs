@@ -4,7 +4,7 @@ use std::{
     collections::HashMap,
     sync::{mpsc, Arc, Mutex},
 };
-use types::{Color, Square};
+use types::Square;
 use xq::{
     generate::{find_magic, ChessMove},
     rng::Rng,
@@ -78,7 +78,7 @@ enum Error {
     ThreadPoolBuildError,
 }
 
-impl From<rayon::ThreadPoolBuildError> for  Error {
+impl From<rayon::ThreadPoolBuildError> for Error {
     fn from(_: rayon::ThreadPoolBuildError) -> Self {
         Self::ThreadPoolBuildError
     }
@@ -92,13 +92,14 @@ impl<'a> TasksManage<'a> {
         }
     }
 
-    fn insert(
-        &mut self,
-        name: &str,
-        task: Box<dyn Fn(&mut FindMagicsWorker) -> Vec<MagicEntryGen> + 'a>,
-    ) {
+    fn insert(&mut self, name: &str, task: Arc<dyn ChessMove + Send + Sync + 'static>) {
         let name = name.to_lowercase();
-        self.tasks.insert(name, task);
+        self.tasks.insert(
+            name,
+            Box::new(move |worker: &mut FindMagicsWorker| {
+                worker.find_and_print_all_magics(task.clone())
+            }),
+        );
     }
 
     fn run(
@@ -150,7 +151,9 @@ fn main() -> Result<(), Error> {
     let task_name = cli.task_name.as_deref();
     let worker = FindMagicsWorker::new();
     if let Some(thread_count) = cli.jobs {
-        rayon::ThreadPoolBuilder::default().num_threads(thread_count).build()?;
+        rayon::ThreadPoolBuilder::default()
+            .num_threads(thread_count)
+            .build()?;
     };
     let task = match task_name {
         Some(name) if name != "none" => TasksOption::Task(name.to_string()),
@@ -158,46 +161,11 @@ fn main() -> Result<(), Error> {
         None => TasksOption::All,
     };
     let mut tasks_manage = TasksManage::new(worker);
-    tasks_manage.insert(
-        "ROOK",
-        Box::new(|worker: &mut FindMagicsWorker| {
-            let rook = rook();
-            let rook = Arc::new(rook);
-            worker.find_and_print_all_magics(rook)
-        }),
-    );
-    tasks_manage.insert(
-        "CANNON",
-        Box::new(|worker: &mut FindMagicsWorker| {
-            let cannon = cannon();
-            let cannon = Arc::new(cannon);
-            worker.find_and_print_all_magics(cannon)
-        }),
-    );
-    tasks_manage.insert(
-        "KNIGHT",
-        Box::new(|worker: &mut FindMagicsWorker| {
-            let knight = knight();
-            let knight = Arc::new(knight);
-            worker.find_and_print_all_magics(knight)
-        }),
-    );
-    tasks_manage.insert(
-        "BISHOP",
-        Box::new(|worker: &mut FindMagicsWorker| {
-            let bishop = bishop();
-            let bishop = Arc::new(bishop);
-            worker.find_and_print_all_magics(bishop)
-        }),
-    );
-    tasks_manage.insert(
-        "KING",
-        Box::new(|worker: &mut FindMagicsWorker| {
-            let king = king();
-            let king = Arc::new(king);
-            worker.find_and_print_all_magics(king)
-        }),
-    );
+    tasks_manage.insert("ROOK", Arc::new(rook()));
+    tasks_manage.insert("CANNON",Arc::new(cannon()));
+    tasks_manage.insert("KNIGHT",Arc::new(knight()));
+    tasks_manage.insert("BISHOP",Arc::new(bishop()));
+    tasks_manage.insert("KING",Arc::new(king()));
     let tables = tasks_manage.run(task)?;
     println!("{}", serde_json::to_string(&tables).unwrap());
     Ok(())
